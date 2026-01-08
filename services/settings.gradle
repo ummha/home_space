@@ -1,0 +1,6 @@
+rootProject.name = 'services'
+
+includeBuild('content')
+includeBuild('auth')
+includeBuild('notification')
+includeBuild('gateway')
