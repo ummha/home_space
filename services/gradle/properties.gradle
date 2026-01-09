@@ -1,0 +1,36 @@
+// ============================================
+// 환경별 설정 로드 ⭐
+// ============================================
+def env = project.findProperty('env') ?: 'local'
+
+// 환경별 properties 파일 로드
+if (env != 'local') {
+    def envPropsFile = file("gradle-${env}.properties")
+    if (envPropsFile.exists()) {
+        envPropsFile.withInputStream (it) -> {
+            project.ext.properties.load(it)
+        }
+        println "✅ Loaded environment: ${env}"
+    } else {
+        println "⚠️  Environment file not found: gradle-${env}.properties"
+        println "   Using default gradle.properties"
+    }
+}
+
+// ============================================
+// 환경 확인 Task
+// ============================================
+tasks.register('printEnv') {
+    group = 'help'
+    description = 'Print current environment settings'
+
+    doLast {
+        println "\n=========================================="
+        println "Current Environment: ${env}"
+        println "=========================================="
+        println "jOOQ DB URL: ${project.findProperty('jooq.db.url')}"
+        println "jOOQ DB User: ${project.findProperty('jooq.db.user')}"
+        println "jOOQ Package: ${project.findProperty('jooq.package')}"
+        println "App Environment: ${project.findProperty('app.environment')}"
+    }
+}

@@ -2,6 +2,8 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '4.0.1'
     id 'io.spring.dependency-management' version '1.1.7'
+//    id 'nu.studer.jooq' version '9.0'  // jOOQ 코드 생성 플러그인 TODO (10.2 버전 확인 필요)
+    id 'nu.studer.jooq' version '10.2'  // jOOQ 코드 생성 플러그인 TODO (10.2 버전 확인 필요)
 }
 
 group = 'com.ummha'
@@ -24,19 +26,75 @@ repositories {
     mavenCentral()
 }
 
+// ============================================
+// 외부 설정 파일 로드 ⭐
+// ============================================
+apply from: '../gradle/properties.gradle'
+//apply from: '../gradle/jooq.gradle'
+
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation 'org.springframework.boot:spring-boot-starter-jooq'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
     compileOnly 'org.projectlombok:lombok'
+
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    implementation 'org.postgresql:postgresql'
     runtimeOnly 'org.postgresql:postgresql'
+
+    // ⭐ jOOQ 코드 생성용
+    jooqGenerator 'org.postgresql:postgresql'
+
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     annotationProcessor 'org.projectlombok:lombok'
+
     testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-jooq-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
+
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+jooq {
+    version = dependencyManagement.importedProperties['jooq.version']
+
+    configurations {
+        main {
+            generationTool {
+                logging = org.jooq.meta.jaxb.Logging.WARN
+                jdbc {
+                    driver = 'org.postgresql.Driver'
+                    url = 'jdbc:postgresql://localhost:5433/content_db'
+                    user = 'postgres'
+                    password = 'postgres'
+                    properties {
+                        property {
+                            key = 'ssl'
+                            value = 'false'
+                        }
+                    }
+                }
+                generator {
+                    name = 'org.jooq.codegen.DefaultGenerator'
+                    database {
+                        name = 'org.jooq.meta.postgres.PostgresDatabase'
+                        inputSchema = 'public'
+                        includes = '.*'
+                        excludes = ''
+                    }
+                    target {
+                        packageName = 'com.ummha.content.adapter.out.persistence.jooq'
+                    }
+                    strategy.name = "org.jooq.codegen.DefaultGeneratorStrategy"
+                }
+            }
+        }
+    }
 }

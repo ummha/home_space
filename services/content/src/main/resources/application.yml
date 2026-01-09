@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: content
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/content_db
+    username: postgres
+    password: postgres

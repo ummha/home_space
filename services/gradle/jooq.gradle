@@ -1,0 +1,289 @@
+// ============================================
+// jOOQ Code Generation 설정
+// ============================================
+def generated = 'src/main/generated'
+
+jooq {
+    version = dependencyManagement.importedProperties['jooq.version']
+
+    configurations {
+        main {
+            generateSchemaSourceOnCompilation = true
+
+            generationTool {
+                // ============================================
+                // 로깅
+                // ============================================
+                logging = 'WARN'
+
+                // ============================================
+                // 데이터베이스 연결
+                // ============================================
+                jdbc {
+                    driver = 'org.postgresql.Driver'
+                    url = project.findProperty('jooq.db.url') ?: 'jdbc:postgresql://localhost:5433/content_db'
+                    user = project.findProperty('jooq.db.user') ?: 'postgres'
+                    password = project.findProperty('jooq.db.password') ?: 'postgres'
+
+                    properties {
+                        property {
+                            key = 'ssl'
+                            value = 'false'
+                        }
+                    }
+                }
+
+                // ============================================
+                // Generator
+                // ============================================
+                generator {
+
+                    // ========================================
+                    // 데이터베이스 메타데이터
+                    // ========================================
+                    database {
+                        name = 'org.jooq.meta.postgres.PostgresDatabase'
+                        inputSchema = 'public'
+
+                        includes = '.*'
+                        excludes = '''
+                            flyway_schema_history |
+                            databasechangelog |
+                            databasechangeloglock
+                        '''.stripIndent().trim()
+
+                        // ⭐ Foreign Key는 여기서 제어
+                        // (generate 블록이 아님!)
+                        recordVersionFields = ''
+                        recordTimestampFields = ''
+                        syntheticPrimaryKeys = ''
+                        overridePrimaryKeys = ''
+
+                        // 타입 강제 변환
+                        forcedTypes {
+                            forcedType {
+                                name = 'varchar'
+                                includeExpression = '.*'
+                                includeTypes = 'JSONB?'
+                            }
+
+                            forcedType {
+                                name = 'varchar'
+                                includeExpression = '.*'
+                                includeTypes = 'INET'
+                            }
+                        }
+                    }
+
+                    // ========================================
+                    // 코드 생성 옵션 (검증된 속성만!) ⭐
+                    // ========================================
+                    generate {
+                        // ------------------------------------
+                        // 기본 생성 옵션
+                        // ------------------------------------
+                        deprecated = false
+                        instanceFields = true
+                        generatedAnnotation = true
+
+                        // ------------------------------------
+                        // 주석
+                        // ------------------------------------
+                        comments = true
+                        commentsOnCatalogs = true
+                        commentsOnSchemas = true
+                        commentsOnTables = true
+                        commentsOnColumns = true
+                        commentsOnKeys = true
+                        commentsOnLinks = true
+
+                        // ------------------------------------
+                        // Record
+                        // ------------------------------------
+                        records = true
+                        recordsImplementingRecordN = true
+
+                        // ------------------------------------
+                        // POJO
+                        // ------------------------------------
+                        pojos = true
+                        immutablePojos = false
+                        serializablePojos = false
+                        pojosEqualsAndHashCode = true
+                        pojosToString = true
+
+                        // ------------------------------------
+                        // Interface
+                        // ------------------------------------
+                        interfaces = false
+                        immutableInterfaces = false
+
+                        // ------------------------------------
+                        // DAO
+                        // ------------------------------------
+                        daos = false
+
+                        // ------------------------------------
+                        // Fluent API
+                        // ------------------------------------
+                        fluentSetters = true
+
+                        // ------------------------------------
+                        // Java Time
+                        // ------------------------------------
+                        javaTimeTypes = true
+
+                        // ------------------------------------
+                        // Spring/Validation
+                        // ------------------------------------
+                        springAnnotations = false
+                        springDao = false
+                        validationAnnotations = false
+
+                        // ------------------------------------
+                        // Global References ⭐ 이것들만!
+                        // ------------------------------------
+                        globalObjectReferences = true
+                        globalCatalogReferences = true
+                        globalSchemaReferences = true
+                        globalTableReferences = true
+                        globalSequenceReferences = true
+                        globalUDTReferences = true
+                        globalRoutineReferences = true
+                        globalQueueReferences = true
+                        globalLinkReferences = true
+                        globalKeyReferences = true
+
+                        // ------------------------------------
+                        // 기타 ⭐ 지원되는 것만!
+                        // ------------------------------------
+                        relations = true           // FK 관계 생성
+                        implicitJoinPathsToOne = false // 기존(true), FIXME false 설정시 암시적 조인 메소드 생성 안됨
+
+                        // Java Bean 스타일
+                        javadoc = true
+
+                        // Deprecated (사용 가능)
+                        deprecated = false
+                        deprecationOnUnknownTypes = true
+
+                        // newline 스타일
+                        newline = '\\n'
+                        indentation = '  '
+
+                        // ⭐ 이하 속성들은 제거 (3.19에서 미지원)
+                        // keys = true                    // ❌ 제거
+                        // foreignKeys = true             // ❌ 제거
+                        // indexes = true                 // ❌ 제거
+                        // primaryKeys = true             // ❌ 제거
+                        // uniqueKeys = true              // ❌ 제거
+                        // checkConstraints = true        // ❌ 제거
+                        // sequences = true               // ❌ 제거
+                        // udts = true                    // ❌ 제거
+                        // enums = true                   // ❌ 제거
+                        // tableValuedFunctions = true    // ❌ 제거
+                        // routines = true                // ❌ 제거
+                    }
+
+                    // ========================================
+                    // 생성 타겟
+                    // ========================================
+                    target {
+                        packageName = project.findProperty('jooq.package') ?:
+                                'com.ummha.jooq'
+
+                        directory = generated
+                        encoding = 'UTF-8'
+                        clean = true  // 생성 전 디렉토리 정리
+                    }
+
+                    // ========================================
+                    // 전략
+                    // ========================================
+                    strategy {
+                        name = 'org.jooq.codegen.DefaultGeneratorStrategy'
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+// ============================================
+// 소스셋에 생성 코드 추가
+// ============================================
+sourceSets {
+    main.java.srcDirs += [ generated ]
+}
+
+// ============================================
+// 빌드 순서 (선택)
+// ============================================
+// ============================================
+// ⭐ 선택사항: 자동 생성을 원한다면 이 주석 해제
+// ============================================
+// tasks.named('compileJava') {
+//     dependsOn tasks.named('generateJooq')
+// }
+
+tasks.withType(JavaCompile).configureEach {
+    options.getGeneratedSourceOutputDirectory().set(file(generated))
+}
+
+// ============================================
+// 유용한 커스텀 Task들
+// ============================================
+
+// jOOQ 버전 확인
+tasks.register('printJooqVersion') {
+    group = 'jooq'
+    description = 'Print jOOQ version from Spring Boot BOM'
+
+    doLast {
+        def jooqVersion = dependencyManagement.importedProperties['jooq.version']
+        println "\n=========================================="
+        println "jOOQ Version (from Spring Boot): ${jooqVersion}"
+        println "=========================================="
+
+        println "\nResolved jOOQ artifacts:"
+        configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts
+                .findAll { it.name.contains('jooq') }
+                .each {
+                    println "  - ${it.name}: ${it.moduleVersion.id.version}"
+                }
+    }
+}
+
+// 생성된 파일 목록
+tasks.register('listGeneratedJooq') {
+    group = 'jooq'
+    description = 'List all generated jOOQ files'
+
+    doLast {
+        def jooqDir = file(generated)
+        if (!jooqDir.exists()) {
+            println "No jOOQ files generated yet. Run './gradlew generateJooq' first."
+            return
+        }
+
+        println "\n=========================================="
+        println "Generated jOOQ files:"
+        println "=========================================="
+        fileTree(jooqDir).each {
+            println it.path.replace(jooqDir.path, '')
+        }
+    }
+}
+
+// 생성 코드 정리
+tasks.register('cleanJooq', Delete) {
+    group = 'jooq'
+    description = 'Delete all generated jOOQ files'
+
+    delete generated
+
+    doLast {
+        println "Deleted: build/generated-src/jooq"
+    }
+}

@@ -79,16 +79,17 @@ COMMENT ON INDEX idx_posts_search_ko IS '한글 전문 검색 인덱스 - Simple
 CREATE TABLE categories
 (
     id            BIGSERIAL PRIMARY KEY,
+    parent_id     BIGINT,
     name          VARCHAR(100)        NOT NULL,
     slug          VARCHAR(100) UNIQUE NOT NULL,
     description   TEXT,
-    parent_id     BIGINT REFERENCES categories (id),
 
     display_order INT       DEFAULT 0,
     is_active     BOOLEAN   DEFAULT true,
 
     created_at    TIMESTAMP DEFAULT NOW(),
-    updated_at    TIMESTAMP DEFAULT NOW()
+    updated_at    TIMESTAMP DEFAULT NOW(),
+    CONSTRAINT fk_categories_parent FOREIGN KEY (parent_id) REFERENCES categories(id)
 );
 
 COMMENT ON TABLE categories IS '카테고리 테이블 - 게시글 분류를 위한 계층 구조 지원';
@@ -181,8 +182,8 @@ COMMENT ON INDEX idx_post_tags_tag IS '태그별 게시글 조회 최적화';
 CREATE TABLE comments
 (
     id           BIGSERIAL PRIMARY KEY,
-    post_id      BIGINT       NOT NULL REFERENCES posts (id) ON DELETE CASCADE,
-    parent_id    BIGINT REFERENCES comments (id),
+    post_id      BIGINT       NOT NULL,
+    parent_id    BIGINT,
 
     author_id    BIGINT,
     author_name  VARCHAR(100) NOT NULL,
@@ -196,7 +197,8 @@ CREATE TABLE comments
     updated_at   TIMESTAMP   DEFAULT NOW(),
     deleted_at   TIMESTAMP,
 
-    CONSTRAINT chk_comment_status CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED', 'DELETED'))
+    CONSTRAINT chk_comment_status CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED', 'DELETED')),
+    CONSTRAINT fk_comments_parent FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
 );
 
 COMMENT ON TABLE comments IS '댓글 테이블 - 게시글에 달리는 댓글 및 대댓글 지원';
@@ -264,7 +266,7 @@ CREATE TABLE post_views
 (
     id        BIGSERIAL PRIMARY KEY,
     post_id   BIGINT NOT NULL REFERENCES posts (id) ON DELETE CASCADE,
-    viewer_ip VARCHAR(45),
+    viewer_ip INET,
     viewer_id BIGINT,
     viewed_at TIMESTAMP DEFAULT NOW()
 );
