@@ -1,6 +1,6 @@
 rootProject.name = 'services'
 
-includeBuild('content')
-includeBuild('auth')
-includeBuild('notification')
+includeBuild('content-service')
+includeBuild('auth-service')
+includeBuild('notification-service')
 includeBuild('gateway')
