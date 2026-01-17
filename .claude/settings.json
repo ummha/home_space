@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash",
+      "mcp__content-postgresql-mcp__pg_manage_schema",
+      "mcp__auth-postgresql-mcp__pg_manage_schema"
+    ]
+  }
+}

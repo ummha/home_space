@@ -1,0 +1,24 @@
+{
+    "mcpServers": {
+        "content-postgresql-mcp": {
+            "command": "node",
+            "args": [
+                "/Users/minseorhie/dev/mcp-servers/postgresql-mcp-server/build/index.js",
+                "--connection-string",
+                "postgresql://postgres:postgres@localhost:5433/content_db"
+            ],
+            "disabled": false,
+            "alwaysAllow": []
+        },
+        "auth-postgresql-mcp": {
+            "command": "node",
+            "args": [
+                "/Users/minseorhie/dev/mcp-servers/postgresql-mcp-server/build/index.js",
+                "--connection-string",
+                "postgresql://postgres:postgres@localhost:5434/auth_db"
+            ],
+            "disabled": false,
+            "alwaysAllow": []
+        }
+    }
+}
