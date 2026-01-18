@@ -1,633 +1,237 @@
-# Blog Platform - MSA Project
+# Ummha Studio - Product Requirements Document
 
-## 📋 프로젝트 개요
-
-### 프로젝트 정보
-
-- **프로젝트명**: Blog Platform (블로그 플랫폼)
-- **아키텍처**: Microservices Architecture (MSA)
-- **개발 목적**: 학습 및 포트폴리오
-- **주요 목표**:
-  - 헥사고날 아키텍처 실전 적용
-  - jOOQ 기반 영속성 계층 구현 (JPA 미사용)
-  - MSA 패턴 학습 (이벤트 기반, CQRS 등)
-  - 클린 아키텍처 원칙 준수
+> **Version**: 2.0.0
+> **Last Updated**: 2025-01-18
+> **Status**: Draft
 
 ---
 
-## 🛠 기술 스택
+## 1. 개요 (Overview)
 
-### Backend
+### 1.1 프로젝트 정보
 
-- **Language**: Java 25
-- **Framework**: Spring Boot 4.0.1
-- **Build Tool**: Gradle 9.2.1
-- **Database Access**: jOOQ 3.19.x (JPA 미사용)
-- **Database**: PostgreSQL 16
-- **Message Queue**: Apache Kafka (예정)
-- **Cache**: Redis (예정)
+| 항목 | 내용 |
+|------|------|
+| **프로젝트명** | Ummha Studio |
+| **프로젝트 유형** | 콘텐츠 관리 플랫폼 (블로그) |
+| **아키텍처** | Microservices Architecture (MSA) |
+| **개발 목적** | 학습 및 포트폴리오 |
 
-### Infrastructure
+### 1.2 배경 및 목적
 
-- **Containerization**: Docker
-- **Orchestration**: Kubernetes (K3s)
-- **CI/CD**: GitHub Actions (예정)
-- **Monitoring**: Prometheus + Grafana (예정)
+Ummha Studio는 MSA 기반의 블로그 플랫폼으로, 다음 학습 목표를 실현하기 위해 개발됩니다:
 
-### Development Tools
+- **헥사고날 아키텍처** 실전 적용
+- **jOOQ** 기반 영속성 계층 구현 (JPA 미사용)
+- **MSA 패턴** 학습 (이벤트 기반, CQRS 등)
+- **클린 아키텍처** 원칙 준수
 
-- **IDE**: IntelliJ IDEA
-- **Version Control**: Git + GitHub
-- **API Documentation**: Swagger/OpenAPI (예정)
+### 1.3 목표 사용자
 
----
+| 구분 | 사용자 | 설명 |
+|------|--------|------|
+| **1차** | 음하 (운영자) | 블로그 콘텐츠 작성 및 관리 |
+| **2차** | 방문자 | 블로그 콘텐츠 열람 및 댓글 참여 |
 
-## 🏗 아키텍처
+### 1.4 성공 지표 (KPIs)
 
-### Overall Architecture
+#### 학습 목표 달성
+- [ ] MSA 아키텍처 3개 서비스 구현 완료
+- [ ] 헥사고날 아키텍처 패턴 적용
+- [ ] jOOQ 기반 영속성 계층 구현
 
-```
-┌─────────────────────────────────────────────────────┐
-│                   API Gateway                       │
-│              (Spring Cloud Gateway)                 │
-└───────────┬─────────────┬─────────────┬─────────────┘
-            │             │             │
-            ▼             ▼             ▼
-    ┌───────────┐ ┌──────────┐ ┌──────────────┐
-    │  Content  │ │   Auth   │ │ Notification │
-    │  Service  │ │ Service  │ │   Service    │
-    └─────┬─────┘ └────┬─────┘ └──────┬───────┘
-          │            │               │
-          ▼            ▼               ▼
-    ┌─────────┐  ┌─────────┐    ┌─────────┐
-    │content_db│ │ auth_db │    │notif_db │
-    └──────────┘ └─────────┘    └─────────┘
-          │            │               │
-          └────────────┴───────────────┘
-                       ▼
-                  ┌─────────┐
-                  │  Kafka  │
-                  └─────────┘
-```
+#### 기술적 완성도
+- [ ] 핵심 기능 (Must) 100% 구현
+- [ ] 코드 커버리지 70% 이상
+- [ ] API 문서화 100%
 
-### Hexagonal Architecture (각 서비스)
-
-```
-┌─────────────────────────────────────────────────────┐
-│              Inbound Adapters                       │
-│  ┌──────────────┐  ┌──────────────┐               │
-│  │ REST API     │  │ Kafka        │               │
-│  │ (Controller) │  │ (Consumer)   │               │
-│  └──────┬───────┘  └──────┬───────┘               │
-└─────────┼──────────────────┼─────────────────────────┘
-          │                  │
-          ▼                  ▼
-┌─────────────────────────────────────────────────────┐
-│          Application Layer (Use Cases)              │
-│  - CreatePostUseCase                                │
-│  - PublishPostUseCase                               │
-│  - UpdatePostUseCase                                │
-└─────────────────────────────────────────────────────┘
-          │
-          ▼
-┌─────────────────────────────────────────────────────┐
-│              Domain Layer (핵심!)                   │
-│  ┌────────────────────────────────────┐            │
-│  │ Domain Models (순수 Java)          │            │
-│  │  - Post (Aggregate Root)           │            │
-│  │  - Slug (Value Object)             │            │
-│  │  - Content (Value Object)          │            │
-│  └────────────────────────────────────┘            │
-│  ┌────────────────────────────────────┐            │
-│  │ Outbound Ports (인터페이스)         │            │
-│  │  - LoadPostPort                    │            │
-│  │  - SavePostPort                    │            │
-│  └────────────────────────────────────┘            │
-└─────────────────────────────────────────────────────┘
-          │
-          ▼
-┌─────────────────────────────────────────────────────┐
-│              Outbound Adapters                      │
-│  ┌──────────────┐  ┌──────────────┐               │
-│  │ jOOQ         │  │ Kafka        │               │
-│  │ (Persistence)│  │ (Producer)   │               │
-│  └──────────────┘  └──────────────┘               │
-└─────────────────────────────────────────────────────┘
-```
-
-### Design Decisions
-
-#### 1. JPA 엔티티 미사용 결정
-
-**이유:**
-
-- JPQL의 한계 (복잡한 쿼리, 동적 쿼리 어려움)
-- 영속성 컨텍스트 복잡도 (LazyInitializationException, N+1 문제)
-- 영속성 엔티티와 도메인 엔티티 간 의미 중복
-- SQL 제어권 및 타입 안정성 확보
-
-**대안: jOOQ**
-
-- 타입 세이프한 SQL DSL
-- 컴파일 타임 검증
-- 명시적 쿼리 작성
-- 순수 도메인 모델 분리
-
-#### 2. 헥사고날 아키텍처 선택
-
-**이유:**
-
-- 도메인 로직과 인프라 완전 분리
-- 테스트 용이성 (Ports & Adapters)
-- 기술 스택 교체 유연성
-- 비즈니스 로직 집중
+#### 운영 준비도
+- [ ] Docker 컨테이너화 완료
+- [ ] Kubernetes 배포 구성
+- [ ] CI/CD 파이프라인 구축
 
 ---
 
-## 📦 서비스 설계
+## 2. 문제 정의 (Problem Statement)
 
-### 1. Content Service (콘텐츠 서비스)
+### 2.1 현재 상황
 
-#### 책임
+- 헥사고날 아키텍처, MSA, jOOQ 등 이론 학습 완료
+- 실제 프로젝트에 적용해본 경험 부재
+- 포트폴리오로 활용할 수 있는 완성된 프로젝트 필요
 
-- 게시글 CRUD
-- 카테고리/태그 관리
-- 댓글 관리
-- 전문 검색 (PostgreSQL FTS)
-- 조회수 추적
+### 2.2 해결하려는 문제
 
-#### Port: 8081
+| 문제 | 해결 방안 |
+|------|----------|
+| 이론과 실전의 괴리 | 실제 서비스 수준의 프로젝트 구현 |
+| MSA 경험 부족 | 마이크로서비스 분리 및 통신 구현 |
+| 영속성 계층 학습 | JPA 대신 jOOQ 사용으로 SQL 제어권 확보 |
 
-#### Database: content_db
+### 2.3 기회 요소
 
-#### 핵심 Aggregate
-
-**Post (Aggregate Root)**
-
-```java
-public class Post {
-    private Long id;
-    private Slug slug;              // Value Object
-    private String title;
-    private Content content;        // Value Object
-    private PostStatus status;
-    private Statistics statistics;  // Value Object
-    private List<Category> categories;
-    private List<Tag> tags;
-    
-    // 비즈니스 메서드
-    public void publish() { }
-    public void updateTitle(String title) { }
-    public void incrementViewCount() { }
-    public boolean canDelete(Long userId, String role) { }
-}
-```
-
-#### Domain Events
-
-- `PostPublishedEvent`: 게시글 발행 시
-- `PostUpdatedEvent`: 게시글 수정 시
-- `PostDeletedEvent`: 게시글 삭제 시
-- `CommentCreatedEvent`: 댓글 작성 시
+- 최신 기술 스택 (Java 25, Spring Boot 4.x) 실전 경험
+- 클린 아키텍처 기반 유지보수 가능한 코드베이스 구축
 
 ---
 
-### 2. Auth Service (인증 서비스)
+## 3. 기능 요구사항 (Functional Requirements)
 
-#### 책임
+### FR-001: 게시글 관리 `Must`
 
-- 사용자 인증 (로그인/로그아웃)
-- JWT 토큰 발급/검증
-- 회원 정보 관리
-- 이메일 인증
-- 비밀번호 재설정
+| ID | 사용자 스토리 | 수용 기준 |
+|----|--------------|----------|
+| FR-001-01 | 운영자로서 게시글을 작성할 수 있다 | 제목, 본문, 상태(임시저장/발행) 저장 |
+| FR-001-02 | 운영자로서 게시글을 수정할 수 있다 | 제목, 본문, 상태 변경 가능 |
+| FR-001-03 | 운영자로서 게시글을 삭제할 수 있다 | 소프트 삭제 적용 |
+| FR-001-04 | 방문자로서 발행된 게시글을 볼 수 있다 | 발행(PUBLISHED) 상태만 노출 |
+| FR-001-05 | 운영자로서 게시글에 슬러그를 지정할 수 있다 | 고유한 URL 슬러그 생성 |
 
-#### Port: 8082
+### FR-002: 사용자 인증 `Must`
 
-#### Database: auth_db
+| ID | 사용자 스토리 | 수용 기준 |
+|----|--------------|----------|
+| FR-002-01 | 방문자로서 회원가입을 할 수 있다 | 이메일, 비밀번호, 사용자명 필수 |
+| FR-002-02 | 회원으로서 로그인을 할 수 있다 | JWT 토큰 발급 |
+| FR-002-03 | 회원으로서 로그아웃을 할 수 있다 | 토큰 무효화 |
+| FR-002-04 | 회원으로서 비밀번호를 재설정할 수 있다 | 이메일 인증 후 변경 |
+| FR-002-05 | 신규 회원으로서 이메일 인증을 완료할 수 있다 | 인증 링크 클릭으로 활성화 |
 
-#### 핵심 Aggregate
+### FR-003: 권한 관리 `Must`
 
-**User (Aggregate Root)**
+| ID | 사용자 스토리 | 수용 기준 |
+|----|--------------|----------|
+| FR-003-01 | 시스템이 역할 기반 접근 제어를 적용한다 | ADMIN, GUEST, SUBSCRIBER 역할 |
+| FR-003-02 | 관리자로서 사용자 역할을 변경할 수 있다 | 역할 변경 이력 기록 |
+| FR-003-03 | 게이트웨이에서 기본 권한을 검증한다 | JWT 토큰 검증 + 역할 확인 |
+| FR-003-04 | 서비스에서 리소스 레벨 권한을 검증한다 | 작성자 확인 등 세부 권한 |
 
-```java
-public class User {
-    private Long id;
-    private Email email;           // Value Object
-    private String username;
-    private PasswordHash password; // Value Object
-    private UserRole role;
-    private UserStatus status;
-    
-    // 비즈니스 메서드
-    public void activate() { }
-    public void ban(String reason) { }
-    public boolean verifyPassword(String rawPassword) { }
-}
-```
+### FR-004: 카테고리/태그 관리 `Should`
 
-#### Domain Events
+| ID | 사용자 스토리 | 수용 기준 |
+|----|--------------|----------|
+| FR-004-01 | 운영자로서 카테고리를 관리할 수 있다 | 계층형 카테고리 지원 |
+| FR-004-02 | 운영자로서 태그를 관리할 수 있다 | 태그 사용 횟수 추적 |
+| FR-004-03 | 방문자로서 카테고리별 게시글을 볼 수 있다 | 카테고리 필터링 |
+| FR-004-04 | 방문자로서 태그별 게시글을 볼 수 있다 | 태그 필터링 |
 
-- `UserCreatedEvent`: 회원가입 시
-- `UserLoginEvent`: 로그인 시
-- `UserRoleChangedEvent`: 권한 변경 시
+### FR-005: 댓글 시스템 `Should`
 
----
+| ID | 사용자 스토리 | 수용 기준 |
+|----|--------------|----------|
+| FR-005-01 | 회원으로서 댓글을 작성할 수 있다 | 로그인 필수 |
+| FR-005-02 | 회원으로서 대댓글을 작성할 수 있다 | 계층형 댓글 지원 |
+| FR-005-03 | 작성자로서 댓글을 수정/삭제할 수 있다 | 본인 댓글만 |
+| FR-005-04 | 운영자로서 댓글을 승인/삭제할 수 있다 | 관리자 권한 |
 
-### 3. Notification Service (알림 서비스)
+### FR-006: 알림 서비스 `Should`
 
-#### 책임
+| ID | 사용자 스토리 | 수용 기준 |
+|----|--------------|----------|
+| FR-006-01 | 신규 회원에게 환영 이메일을 발송한다 | 회원가입 완료 시 |
+| FR-006-02 | 회원에게 이메일 인증 메일을 발송한다 | 인증 링크 포함 |
+| FR-006-03 | 회원에게 비밀번호 재설정 메일을 발송한다 | 재설정 링크 포함 |
+| FR-006-04 | 운영자에게 새 댓글 알림을 발송한다 | 이벤트 기반 |
 
-- 이메일 발송
-- 알림 구독 관리
-- 알림 템플릿 관리
-- 이벤트 기반 알림 발송
+### FR-007: 전문 검색 `Could`
 
-#### Port: 8083
+| ID | 사용자 스토리 | 수용 기준 |
+|----|--------------|----------|
+| FR-007-01 | 방문자로서 게시글을 검색할 수 있다 | PostgreSQL FTS 사용 |
+| FR-007-02 | 검색 결과에서 관련도 순으로 정렬된다 | 랭킹 알고리즘 적용 |
+| FR-007-03 | 한글/영문 검색을 지원한다 | 다국어 인덱스 |
 
-#### Database: notification_db
+### FR-008: 통계 기능 `Could`
 
-#### 핵심 기능
-
-- 회원가입 환영 메일
-- 이메일 인증 메일
-- 댓글 알림
-- 비밀번호 재설정 메일
-
----
-
-## 🗄 데이터베이스 설계
-
-### Content Service DB (content_db)
-
-#### 핵심 테이블
-
-**posts** (게시글)
-
-```sql
-- id: BIGSERIAL PRIMARY KEY
-- title: VARCHAR(200)
-- slug: VARCHAR(250) UNIQUE
-- content: TEXT
-- status: VARCHAR(20) (DRAFT, PUBLISHED, ARCHIVED)
-- published_at: TIMESTAMP
-- view_count, like_count, comment_count: INT
-- created_at, updated_at, deleted_at: TIMESTAMP
-```
-
-**categories** (카테고리)
-
-```sql
-- id: BIGSERIAL PRIMARY KEY
-- name: VARCHAR(100)
-- slug: VARCHAR(100) UNIQUE
-- parent_id: BIGINT (Self-reference FK)
-- display_order: INT
-```
-
-**tags** (태그)
-
-```sql
-- id: BIGSERIAL PRIMARY KEY
-- name: VARCHAR(50) UNIQUE
-- slug: VARCHAR(50) UNIQUE
-- usage_count: INT
-```
-
-**post_categories, post_tags** (다대다 관계)
-**comments** (댓글 - Self-reference FK)
-**post_views** (조회수 추적 - 일별 중복 방지)
-**outbox_events** (이벤트 발행용)
-
-#### 인덱스 전략
-
-```sql
--- 성능 최적화
-CREATE INDEX idx_posts_status ON posts(status);
-CREATE INDEX idx_posts_published_at ON posts(published_at DESC) 
-  WHERE status = 'PUBLISHED';
-
--- 전문 검색 (Full Text Search)
-CREATE INDEX idx_posts_search_en ON posts 
-  USING gin(to_tsvector('english', title || ' ' || content));
-  
-CREATE INDEX idx_posts_search_ko ON posts 
-  USING gin(to_tsvector('simple', title || ' ' || content));
-```
+| ID | 사용자 스토리 | 수용 기준 |
+|----|--------------|----------|
+| FR-008-01 | 게시글 조회수를 추적한다 | 일별 중복 방지 |
+| FR-008-02 | 게시글 좋아요 수를 추적한다 | 회원당 1회 |
+| FR-008-03 | 댓글 수를 집계한다 | 실시간 카운트 |
 
 ---
 
-### Auth Service DB (auth_db)
+## 4. 비기능 요구사항 (Non-Functional Requirements)
 
-#### 핵심 테이블
+### NFR-001: 성능
 
-**users** (사용자)
+| ID | 요구사항 | 목표 |
+|----|---------|------|
+| NFR-001-01 | API 응답 시간 | 95%ile < 200ms |
+| NFR-001-02 | 페이지 로딩 시간 | < 3초 |
+| NFR-001-03 | 동시 접속자 | 100명 이상 |
 
-```sql
-- id: BIGSERIAL PRIMARY KEY
-- email: VARCHAR(200) UNIQUE
-- username: VARCHAR(50) UNIQUE
-- password_hash: VARCHAR(255)
-- role: VARCHAR(20) (ADMIN, GUEST, SUBSCRIBER)
-- status: VARCHAR(20) (ACTIVE, INACTIVE, BANNED)
-- email_verified: BOOLEAN
-- last_login_at, last_login_ip: 보안 추적
-```
+### NFR-002: 보안
 
-**permissions** (권한)
-**role_permissions** (역할-권한 매핑)
-**email_verifications** (이메일 인증)
-**password_resets** (비밀번호 재설정)
-**login_history** (로그인 이력 - 보안 감사)
-**refresh_tokens** (리프레시 토큰)
+| ID | 요구사항 | 구현 방안 |
+|----|---------|----------|
+| NFR-002-01 | 비밀번호 암호화 | BCrypt 해싱 |
+| NFR-002-02 | API 인증 | JWT (Access + Refresh Token) |
+| NFR-002-03 | SQL Injection 방지 | jOOQ 파라미터 바인딩 |
+| NFR-002-04 | XSS 방지 | 입력값 검증 및 이스케이프 |
 
-#### RBAC (Role-Based Access Control)
+### NFR-003: 확장성
 
-```
-Roles:
-- ADMIN: 모든 권한
-- GUEST: 기본 읽기/쓰기
-- SUBSCRIBER: 읽기 + 댓글
+| ID | 요구사항 | 구현 방안 |
+|----|---------|----------|
+| NFR-003-01 | 수평 확장 | 서비스별 독립 스케일링 |
+| NFR-003-02 | 데이터베이스 분리 | 서비스별 독립 DB |
+| NFR-003-03 | 비동기 통신 | Kafka 이벤트 기반 |
 
-Permissions:
-- POST_CREATE, POST_UPDATE, POST_DELETE, POST_PUBLISH
-- COMMENT_CREATE, COMMENT_UPDATE, COMMENT_APPROVE
-- USER_MANAGE
-```
+### NFR-004: 유지보수성
+
+| ID | 요구사항 | 구현 방안 |
+|----|---------|----------|
+| NFR-004-01 | 코드 품질 | 정적 분석 도구 적용 |
+| NFR-004-02 | 테스트 커버리지 | 70% 이상 |
+| NFR-004-03 | 문서화 | API 문서 자동화 (OpenAPI) |
+| NFR-004-04 | 로깅/모니터링 | 구조화된 로깅, 메트릭 수집 |
 
 ---
 
-## 🔐 인증/인가 아키텍처
+## 5. 기술 명세 요약
 
-### 하이브리드 방식 (추천!)
+### 5.1 기술 스택
 
-```
-┌─────────────────────────────────────┐
-│     API Gateway                     │
-│  ✅ 토큰 검증 (Auth Service)        │
-│  ✅ 기본 RBAC (role 기반)           │
-│  ✅ X-User-Id, X-User-Role 헤더     │
-└──────────┬──────────────────────────┘
-           ↓
-┌─────────────────────────────────────┐
-│     Content Service                 │
-│  ✅ 세부 인가 (리소스 레벨)         │
-│  ✅ "작성자인가?" 체크              │
-│  ✅ "상태가 적절한가?" 체크         │
-└─────────────────────────────────────┘
-```
+| 영역 | 기술 |
+|------|------|
+| **Language** | Java 25 |
+| **Framework** | Spring Boot 4.0.1 |
+| **Build** | Gradle 9.2.1 |
+| **Database** | PostgreSQL 16 |
+| **ORM** | jOOQ 3.19.x (JPA 미사용) |
+| **Message Queue** | Apache Kafka |
+| **Cache** | Redis |
+| **Container** | Docker |
+| **Orchestration** | Kubernetes (K3s) |
 
-### 인증 플로우
+### 5.2 서비스 구성
 
-```
-1. 사용자 로그인
-   → Auth Service: 인증 + JWT 발급
+| 서비스 | 포트 | 책임 |
+|--------|------|------|
+| **Content Service** | 8081 | 게시글, 카테고리, 태그, 댓글 |
+| **Auth Service** | 8082 | 인증, 권한, 사용자 관리 |
+| **Notification Service** | 8083 | 이메일, 알림 |
+| **API Gateway** | 8080 | 라우팅, 인증 검증 |
 
-2. API 호출
-   → Gateway: JWT 검증 + 기본 권한 체크
-   → Service: 세부 권한 체크 + 비즈니스 로직
-
-3. 토큰 갱신
-   → Auth Service: Refresh Token → 새 Access Token
-```
+> 상세 아키텍처는 [ARCHITECTURE.md](./docs/architecture/ARCHITECTURE.md) 참조
 
 ---
 
-## 🔧 개발 환경 설정
+## 6. 우선순위 및 로드맵
 
-### Prerequisites
+### 6.1 MoSCoW 분류
 
-```bash
-- Java 25 (Eclipse Temurin)
-- Docker & Docker Compose
-- PostgreSQL 16
-- Gradle 9.2.1+
-```
+| 우선순위 | 기능 | 비고 |
+|---------|------|------|
+| **Must** | 게시글 CRUD, 사용자 인증/가입, 기본 권한 관리 | MVP 필수 |
+| **Should** | 카테고리/태그, 댓글 시스템, 이메일 알림 | 핵심 부가 기능 |
+| **Could** | 전문 검색, 조회수 추적, 좋아요 | 향후 추가 |
+| **Won't (v1)** | 소셜 로그인, 실시간 알림, 관리자 대시보드 | 1차 범위 제외 |
 
-### 프로젝트 구조
+### 6.2 개발 로드맵
 
-```
-blog-msa/
-├── gradle/
-│   └── jooq.gradle              # jOOQ 공유 설정
-├── services/
-│   ├── content-service/
-│   │   ├── build.gradle
-│   │   ├── gradle.properties
-│   │   └── src/
-│   │       ├── main/
-│   │       │   ├── java/
-│   │       │   │   └── com/ummha/content/
-│   │       │   │       ├── domain/
-│   │       │   │       │   ├── model/          # 순수 도메인 모델
-│   │       │   │       │   ├── port/
-│   │       │   │       │   │   ├── in/         # Use Cases
-│   │       │   │       │   │   └── out/        # Repository Ports
-│   │       │   │       │   ├── service/        # Domain Service
-│   │       │   │       │   └── event/          # Domain Events
-│   │       │   │       ├── application/        # Application Service
-│   │       │   │       │   └── service/
-│   │       │   │       ├── adapter/
-│   │       │   │       │   ├── in/
-│   │       │   │       │   │   └── web/        # REST Controllers
-│   │       │   │       │   └── out/
-│   │       │   │       │       ├── persistence/ # jOOQ Adapter
-│   │       │   │       │       └── event/       # Kafka Producer
-│   │       │   │       └── infrastructure/     # Config
-│   │       │   ├── generated/                  # jOOQ 생성 코드
-│   │       │   └── resources/
-│   │       └── test/
-│   ├── auth-service/
-│   └── notification-service/
-├── infrastructure/
-│   ├── docker-compose.yml
-│   └── k8s/
-├── docs/
-│   ├── PRD.md                   # 이 문서
-│   ├── API.md                   # API 명세
-│   └── ARCHITECTURE.md          # 상세 아키텍처
-└── settings.gradle
-```
-
-### 패키지 명명 규칙
-
-```
-com.ummha.{service}.domain.model        - 도메인 모델
-com.ummha.{service}.domain.port.in      - Inbound Port
-com.ummha.{service}.domain.port.out     - Outbound Port
-com.ummha.{service}.application.service - Application Service
-com.ummha.{service}.adapter.in.web      - REST Controller
-com.ummha.{service}.adapter.out.persistence - jOOQ Adapter
-```
-
----
-
-## 🚀 빌드 및 실행
-
-### 로컬 개발 환경
-
-```bash
-# 1. PostgreSQL 실행
-docker-compose up -d postgres
-
-# 2. DB 스키마 생성
-psql -h localhost -p 5433 -U postgres -f docs/schema/content-service.sql
-
-# 3. jOOQ 코드 생성
-cd services/content-service
-./gradlew generateJooq
-
-# 4. 빌드
-./gradlew build
-
-# 5. 실행
-./gradlew bootRun
-```
-
-### jOOQ 코드 생성
-
-```bash
-# 기본 (로컬 DB)
-./gradlew generateJooq
-
-# 환경별
-./gradlew generateJooq -Penv=dev
-./gradlew generateJooq -Penv=prod
-
-# 환경 변수
-export JOOQ_DB_URL=jdbc:postgresql://localhost:5433/content_db
-export JOOQ_DB_USER=postgres
-export JOOQ_DB_PASSWORD=postgres
-./gradlew generateJooq
-
-# 정리 후 재생성
-./gradlew cleanJooq generateJooq
-```
-
-### Gradle Properties
-
-**gradle.properties** (로컬 - Git 커밋)
-
-```properties
-jooq.db.url=jdbc:postgresql://localhost:5433/content_db
-jooq.db.user=postgres
-jooq.db.password=postgres
-jooq.package=com.ummha.content.adapter.out.persistence.jooq
-```
-
-**gradle-dev.properties** (개발 서버 - Git 무시)
-
-```properties
-jooq.db.url=jdbc:postgresql://dev-server:5432/content_db
-jooq.db.user=dev_user
-jooq.db.password=dev_password
-```
-
----
-
-## 📝 개발 가이드
-
-### Domain Model 작성
-
-```java
-// ✅ 좋은 예: 순수 Java, 비즈니스 로직 집중
-public class Post {
-    private Long id;
-    private Slug slug;
-    private Content content;
-    
-    public void publish() {
-        validateForPublish();
-        this.status = PostStatus.PUBLISHED;
-        this.publishedAt = LocalDateTime.now();
-    }
-    
-    private void validateForPublish() {
-        if (title == null || content == null) {
-            throw new IllegalStateException("제목과 내용 필수");
-        }
-    }
-}
-
-// ❌ 나쁜 예: 인프라 의존성
-@Entity  // ❌ JPA 의존성
-public class Post {
-    @Id @GeneratedValue  // ❌
-    private Long id;
-}
-```
-
-### Persistence Adapter 작성
-
-```java
-@Component
-@RequiredArgsConstructor
-public class PostPersistenceAdapter implements 
-    LoadPostPort, SavePostPort {
-    
-    private final DSLContext dsl;
-    private final PostPersistenceMapper mapper;
-    
-    @Override
-    public Optional<Post> loadById(Long id) {
-        return dsl
-            .selectFrom(POSTS)
-            .where(POSTS.ID.eq(id))
-            .fetchOptional()
-            .map(mapper::toDomain);  // Record → Domain
-    }
-    
-    @Override
-    public Long save(Post post) {
-        var record = dsl.newRecord(POSTS);
-        mapper.toRecord(post, record);  // Domain → Record
-        record.store();
-        return record.getId();
-    }
-}
-```
-
-### Use Case 작성
-
-```java
-@Service
-@RequiredArgsConstructor
-public class PostService implements CreatePostUseCase {
-    
-    private final LoadPostPort loadPostPort;
-    private final SavePostPort savePostPort;
-    private final PublishEventPort publishEventPort;
-    
-    @Override
-    @Transactional
-    public Long createPost(CreatePostCommand command) {
-        // 1. 도메인 모델 생성
-        Post post = Post.create(
-            command.title(),
-            command.content(),
-            command.authorId(),
-            command.authorName()
-        );
-        
-        // 2. 영속화
-        Long postId = savePostPort.save(post);
-        
-        // 3. 이벤트 발행
-        publishEventPort.publish(
-            new PostCreatedEvent(postId, post.getAuthorId())
-        );
-        
-        return postId;
-    }
-}
-```
-
----
-
-## 🎯 다음 단계 (Roadmap)
-
-### Phase 1: MVP (현재)
-
+#### Phase 1: MVP (현재)
 - [x] 프로젝트 구조 설계
 - [x] DB 스키마 설계
 - [x] jOOQ 설정
@@ -636,24 +240,21 @@ public class PostService implements CreatePostUseCase {
 - [ ] REST API 구현
 - [ ] 기본 CRUD 완성
 
-### Phase 2: 고급 기능
-
+#### Phase 2: 고급 기능
 - [ ] Kafka 이벤트 기반 통신
 - [ ] Redis 캐싱
 - [ ] PostgreSQL FTS 구현
 - [ ] API Gateway 구현
 - [ ] JWT 인증 구현
 
-### Phase 3: 운영
-
+#### Phase 3: 운영
 - [ ] Docker 컨테이너화
 - [ ] K8s 배포
 - [ ] CI/CD 파이프라인
 - [ ] 모니터링 (Prometheus + Grafana)
 - [ ] 로깅 (ELK Stack)
 
-### Phase 4: 최적화
-
+#### Phase 4: 최적화
 - [ ] 성능 테스트
 - [ ] 부하 테스트
 - [ ] 쿼리 최적화
@@ -661,36 +262,61 @@ public class PostService implements CreatePostUseCase {
 
 ---
 
-## 📚 참고 자료
+## 7. 위험 요소 및 완화 방안
 
-### 아키텍처
+### 7.1 기술적 위험
 
-- Clean Architecture (Robert C. Martin)
-- Hexagonal Architecture (Alistair Cockburn)
-- Domain-Driven Design (Eric Evans)
-- TDD (Test-Driven Development)
+| 위험 | 영향 | 완화 방안 |
+|------|------|----------|
+| jOOQ 학습 곡선 | 개발 지연 | 공식 문서 및 예제 학습 병행 |
+| MSA 복잡도 | 디버깅 어려움 | 분산 추적 (Jaeger) 도입 |
+| Kafka 운영 | 메시지 유실 | 아웃박스 패턴 적용 |
 
-### 기술 문서
+### 7.2 아키텍처 위험
 
-- [jOOQ Official Documentation](https://www.jooq.org/doc/latest/)
-- [Spring Boot Reference](https://docs.spring.io/spring-boot/index.html)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-- [Kafka Documentation](https://kafka.apache.org/)
-- [Redis Documentation](https://redis.io/)
+| 위험 | 영향 | 완화 방안 |
+|------|------|----------|
+| 서비스 간 의존성 | 장애 전파 | 서킷 브레이커 패턴 |
+| 분산 트랜잭션 | 데이터 불일치 | Saga 패턴 검토 |
+| 헥사고날 과도한 추상화 | 개발 생산성 저하 | 적정 수준 균형 유지 |
 
-### 프로젝트 문서
+### 7.3 일정 위험
 
-- [API 명세](./API.md) (예정)
-- [아키텍처 상세](./ARCHITECTURE.md) (예정)
-- [배포 가이드](./DEPLOYMENT.md) (예정)
-
----
-
-## 👥 Contributors
-
-- 민서 ([@ummha](https://github.com/ummha))
+| 위험 | 영향 | 완화 방안 |
+|------|------|----------|
+| 범위 확대 | 완료 지연 | MoSCoW 우선순위 엄격 준수 |
+| 학습 시간 소요 | 개발 속도 저하 | 점진적 학습 + 구현 병행 |
 
 ---
 
-**Last Updated**: 2025-01-17
-**Version**: 1.0.0
+## 8. 부록
+
+### 8.1 관련 문서
+
+| 문서 | 설명 | 경로 |
+|------|------|------|
+| 아키텍처 | 상세 시스템 설계 | [docs/architecture/ARCHITECTURE.md](./docs/architecture/ARCHITECTURE.md) |
+| API 명세 | REST API 문서 | [docs/api/API.md](./docs/api/API.md) |
+| 배포 가이드 | 빌드 및 실행 | [docs/guides/DEPLOYMENT.md](./docs/guides/DEPLOYMENT.md) |
+
+### 8.2 용어 정의
+
+| 용어 | 정의 |
+|------|------|
+| **MSA** | Microservices Architecture - 마이크로서비스 아키텍처 |
+| **헥사고날 아키텍처** | Ports & Adapters 패턴 기반 아키텍처 |
+| **jOOQ** | Java Object Oriented Querying - 타입 세이프 SQL DSL |
+| **Aggregate Root** | DDD에서 집합체의 루트 엔티티 |
+| **CQRS** | Command Query Responsibility Segregation |
+| **Saga** | 분산 트랜잭션 관리 패턴 |
+
+### 8.3 변경 이력
+
+| 버전 | 날짜 | 변경 내용 | 작성자 |
+|------|------|----------|--------|
+| 1.0.0 | 2025-01-17 | 초기 시안 작성 | 민서 |
+| 2.0.0 | 2025-01-18 | PRD 표준 형식 재정리 | 민서 |
+
+---
+
+**Contributors**: [@ummha](https://github.com/ummha)
